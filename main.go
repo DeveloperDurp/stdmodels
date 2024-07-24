@@ -43,9 +43,7 @@ func SendResponse(message interface{}, w http.ResponseWriter) {
 	switch req := message.(type) {
 	case *StandardMessage:
 
-		// Write the status code to the response.
-		w.WriteHeader(req.Status)
-		w.Header().Set("Content-Type", "application/json")
+		setHeader(&w, req.Status)
 
 		// Write the message to the response body.
 		err := json.NewEncoder(w).Encode(req.Message)
@@ -54,9 +52,7 @@ func SendResponse(message interface{}, w http.ResponseWriter) {
 		}
 	case *StandardError:
 
-		// Write the status code to the response.
-		w.WriteHeader(req.Status)
-		w.Header().Set("Content-Type", "application/json")
+		setHeader(&w, req.Status)
 
 		// Write the message to the response body.
 		err := json.NewEncoder(w).Encode(req)
@@ -66,4 +62,9 @@ func SendResponse(message interface{}, w http.ResponseWriter) {
 	default:
 		fmt.Println("Passed wrong interface")
 	}
+}
+
+func setHeader(w *http.ResponseWriter, statusCode int) {
+	(*w).WriteHeader(statusCode)
+	(*w).Header().Set("Content-Type", "application/json")
 }
