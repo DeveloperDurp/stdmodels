@@ -2,7 +2,6 @@ package stdmodels
 
 import (
 	"encoding/json"
-	"fmt"
 	"gitlab.com/developerdurp/logger"
 	"net/http"
 )
@@ -22,6 +21,30 @@ type StandardError struct {
 	Description []string `json:"description"`
 }
 
+type Response interface {
+	SendResponse(w http.ResponseWriter)
+}
+
+func (message *StandardMessage) SendReponse(w http.ResponseWriter) {
+	setHeader(&w, message.Status)
+
+	// Write the message to the response body.
+	err := json.NewEncoder(w).Encode(message.Message)
+	if err != nil {
+		logger.LogError("Failed to Encode")
+	}
+}
+
+func (message *StandardError) SendReponse(w http.ResponseWriter) {
+	setHeader(&w, message.Status)
+
+	// Write the message to the response body.
+	err := json.NewEncoder(w).Encode(message)
+	if err != nil {
+		logger.LogError("Failed to Encode")
+	}
+}
+
 // NewFailureResponse returns a new instance of StandardError with the given message, status code and description.
 func NewFailureResponse(message string, status int, description []string) StandardError {
 	return StandardError{
@@ -39,31 +62,7 @@ func NewMessageResponse(message interface{}, status int) StandardMessage {
 	}
 }
 
-func SendResponse(message interface{}, w http.ResponseWriter) {
-	switch req := message.(type) {
-	case *StandardMessage:
-
-		setHeader(&w, req.Status)
-
-		// Write the message to the response body.
-		err := json.NewEncoder(w).Encode(req.Message)
-		if err != nil {
-			logger.LogError("Failed to Encode")
-		}
-	case *StandardError:
-
-		setHeader(&w, req.Status)
-
-		// Write the message to the response body.
-		err := json.NewEncoder(w).Encode(req)
-		if err != nil {
-			logger.LogError("Failed to Encode")
-		}
-	default:
-		fmt.Println("Passed wrong interface")
-	}
-}
-
+// SetHeader sets the HTTP response headers for a JSON response.
 func setHeader(w *http.ResponseWriter, statusCode int) {
 	(*w).WriteHeader(statusCode)
 	(*w).Header().Set("Content-Type", "application/json")
